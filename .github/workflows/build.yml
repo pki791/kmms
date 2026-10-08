@@ -1,0 +1,68 @@
+name: Test and build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows x64, os: windows-latest }
+          - { name: Linux x64, os: ubuntu-22.04 }
+          - { name: macOS arm64, os: macos-14 }
+          # Intel Macs: add a job with an Intel macOS runner label (e.g. macos-13 / macos-15-intel).
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Linux system libraries for Qt
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-xkb1
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: python -m ruff check src tests
+
+      - name: Tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python -m pytest -q
+      - name: Tests (Windows / macOS)
+        if: runner.os != 'Linux'
+        run: python -m pytest -q
+
+      # Packaging is the last step. The build script smoke-tests the finished binary with the
+      # real windowing system (--selftest) before reporting success.
+      - name: Build single-file binary (Linux)
+        if: runner.os == 'Linux'
+        env:
+          KMMS_SELFTEST_PLATFORM: native
+        run: xvfb-run -a python packaging/build.py
+      - name: Build single-file binary (Windows / macOS)
+        if: runner.os != 'Linux'
+        env:
+          KMMS_SELFTEST_PLATFORM: native
+        run: python packaging/build.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KMMS-${{ runner.os }}-${{ runner.arch }}
+          path: dist/KMMS-*
+          if-no-files-found: error
