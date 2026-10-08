@@ -323,9 +323,10 @@ class PollEngine:
         if best is None:
             return False
         started = time.monotonic()
+        timer_start = time.perf_counter()  # monotonic() only ticks every ~15 ms on Windows
         result = self._poll_one(link, best)
         finished = time.monotonic()
-        result.duration_ms = (finished - started) * 1000.0
+        result.duration_ms = (time.perf_counter() - timer_start) * 1000.0
         result.timestamp = time.time()
         self._emit(result)
         schedule = schedules.get(best.id)

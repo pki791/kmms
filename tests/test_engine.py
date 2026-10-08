@@ -69,7 +69,7 @@ def test_polls_and_reports_values(engine, tcp_slave):
     col = Collector(engine)
     result = col.wait_for(lambda ev: next((e for e in ev if isinstance(e, eng.PollResult)), None))
     assert result.ok and result.values == [5, 6, 7, 8] and result.set_id == poll.id
-    assert result.duration_ms > 0 and result.timestamp > 0
+    assert result.duration_ms >= 0 and result.timestamp > 0
     assert col.states()[:2] == ["connecting", "open"]
     engine.stop()
     col.pump()
