@@ -14,6 +14,14 @@ Writing a register (FC16) from the table's context menu:
 |------------|------------|
 | ![Two polling sets on a serial RTU connection](docs/images/screenshot-serial-rtu.png) | ![Changed values highlighted on a Modbus TCP connection](docs/images/screenshot-modbus-tcp.png) |
 
+## Why another Modbus master?
+
+I wrote KMMS because I was disgusted by the tools that were available. The commercial Modbus
+masters are expensive and still do not work properly, and the free ones are closed-source and
+buggy, so when something goes wrong you can neither see why nor fix it. KMMS is the tool I wanted
+to have: it does exactly what you tell it, shows every frame on the wire, and its source is open
+for anyone to read and improve.
+
 ## Features
 
 **Connections**
@@ -93,6 +101,22 @@ the one-file layout unpacks about 100 MB on every launch (~7 s start-up) and PyI
 deprecates it for bundles. The app is ad-hoc signed only; for distribution to other people sign
 and notarize it with an Apple Developer ID, otherwise Gatekeeper asks to confirm the first start
 (right-click > Open). Unsigned Windows executables trigger SmartScreen in the same way.
+
+## Releases
+
+Ready-to-run binaries for Windows, Linux and macOS are attached to each
+[GitHub release](../../releases). On Linux, make the download executable first
+(`chmod +x KMMS-*-linux-x64`). To publish a release, bump the version in `pyproject.toml` and
+`src/kmms/__init__.py`, commit, then push a matching tag:
+
+```bash
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+The workflow builds and tests all three platforms and creates the release with the binaries
+attached (refusing if the tag does not match the version). Builds of ordinary pushes are
+available as *artifacts* on the workflow run page in the Actions tab.
 
 ## Layout
 
