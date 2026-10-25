@@ -31,7 +31,7 @@ def _run(*args: str) -> subprocess.CompletedProcess:
 def test_version_flag():
     """--version prints the name and version."""
     result = _run("--version")
-    assert result.returncode == 0 and "Kunas Modbus Master Simulator" in result.stdout
+    assert result.returncode == 0 and "Kuna's Modbus Master Simulator" in result.stdout
 
 
 def test_selftest_starts_the_whole_ui():

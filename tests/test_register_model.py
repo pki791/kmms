@@ -148,6 +148,28 @@ def test_error_blinks_red_then_stays_tinted_until_success():
     assert _bg(model, 0, "unsigned") is None
 
 
+def test_disabled_highlights_do_not_animate():
+    """Read flash and change mark can be switched off (duration 0)."""
+    model = _model(columns=["unsigned"])
+    model.set_timing(0.0, 0.0)
+    assert model.apply_values([1, 2, 3, 4], now=10.0) is False
+    assert model.apply_values([1, 2, 9, 4], now=11.0) is False
+    model.tick(11.0)
+    assert _bg(model, 2, "unsigned") is None
+
+
+def test_error_without_blink_only_tints():
+    """With the red blink off a failure shows the faint tint immediately, without animation."""
+    model = _model(columns=["unsigned"])
+    model.set_timing(0.35, 1.5, error_blink=False)
+    model.apply_values([1, 2, 3, 4], now=10.0)
+    model.apply_error(now=20.0)
+    at_once = _bg(model, 0, "unsigned")
+    model.tick(20.0 + ERROR_BLINK_S + 1)
+    assert at_once is not None and at_once.red() > at_once.green()
+    assert at_once == _bg(model, 0, "unsigned")
+
+
 def test_animation_stops_when_nothing_is_active():
     """tick() reports whether more frames are needed."""
     model = _model()

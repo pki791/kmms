@@ -76,6 +76,33 @@ class AppSettings:
         self._s.setValue("ui/change_ms", int(value))
 
     @property
+    def highlight_read(self) -> bool:
+        """Flash every register that was read (green)."""
+        return _as_bool(self._s.value("ui/highlight_read", True))
+
+    @highlight_read.setter
+    def highlight_read(self, value: bool) -> None:
+        self._s.setValue("ui/highlight_read", bool(value))
+
+    @property
+    def highlight_change(self) -> bool:
+        """Mark registers whose value changed (amber)."""
+        return _as_bool(self._s.value("ui/highlight_change", True))
+
+    @highlight_change.setter
+    def highlight_change(self, value: bool) -> None:
+        self._s.setValue("ui/highlight_change", bool(value))
+
+    @property
+    def highlight_error(self) -> bool:
+        """Blink the whole set red on a read error."""
+        return _as_bool(self._s.value("ui/highlight_error", True))
+
+    @highlight_error.setter
+    def highlight_error(self, value: bool) -> None:
+        self._s.setValue("ui/highlight_error", bool(value))
+
+    @property
     def autosave_seconds(self) -> int:
         """Interval of the automatic session save."""
         return _as_int(self._s.value("session/autosave_s", 30), 30, 5, 3600)
@@ -203,6 +230,17 @@ class PreferencesDialog(QDialog):
         self.change.setSuffix(" ms")
         self.change.setSingleStep(100)
         self.change.setValue(settings.change_ms)
+        self.flash_on = QCheckBox("Flash on read (green)")
+        self.flash_on.setChecked(settings.highlight_read)
+        self.flash_on.toggled.connect(self.flash.setEnabled)
+        self.flash.setEnabled(settings.highlight_read)
+        self.change_on = QCheckBox("Highlight on change (amber)")
+        self.change_on.setChecked(settings.highlight_change)
+        self.change_on.toggled.connect(self.change.setEnabled)
+        self.change.setEnabled(settings.highlight_change)
+        self.error_on = QCheckBox("Blink on error (red)")
+        self.error_on.setToolTip("When off, a failing set only gets a faint red tint")
+        self.error_on.setChecked(settings.highlight_error)
         self.restore = QCheckBox("Reopen the last workspace on start")
         self.restore.setChecked(settings.restore_session)
         self.autosave = QSpinBox()
@@ -212,8 +250,9 @@ class PreferencesDialog(QDialog):
 
         form = QFormLayout()
         form.addRow("Theme", self.theme)
-        form.addRow("Update flash (green)", self.flash)
-        form.addRow("Change highlight (amber)", self.change)
+        form.addRow(self.flash_on, self.flash)
+        form.addRow(self.change_on, self.change)
+        form.addRow(self.error_on)
         form.addRow("", self.restore)
         form.addRow("Autosave interval", self.autosave)
         buttons = QDialogButtonBox(
@@ -229,5 +268,8 @@ class PreferencesDialog(QDialog):
         settings.theme = str(self.theme.currentData())
         settings.flash_ms = self.flash.value()
         settings.change_ms = self.change.value()
+        settings.highlight_read = self.flash_on.isChecked()
+        settings.highlight_change = self.change_on.isChecked()
+        settings.highlight_error = self.error_on.isChecked()
         settings.restore_session = self.restore.isChecked()
         settings.autosave_seconds = self.autosave.value()

@@ -4,8 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kmms"
-version = "0.1.0"
-description = "Kunas Modbus Master Simulator - cross-platform Modbus master with a modern GUI"
+version = "0.1.1"
+description = "Kuna's Modbus Master Simulator - cross-platform Modbus master with a modern GUI"
+license = {text = "PolyForm-Noncommercial-1.0.0"}
 requires-python = ">=3.9"
 dependencies = [
     "PySide6>=6.6",

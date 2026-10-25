@@ -110,7 +110,7 @@ else:
         bundle_identifier="com.kuna.kmms",
         info_plist={
             "CFBundleName": "KMMS",
-            "CFBundleDisplayName": "Kunas Modbus Master Simulator",
+            "CFBundleDisplayName": "Kuna's Modbus Master Simulator",
             "CFBundleShortVersionString": __version__,
             "CFBundleVersion": __version__,
             "NSHighResolutionCapable": True,

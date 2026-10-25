@@ -1,8 +1,18 @@
-# Kunas Modbus Master Simulator (KMMS)
+# Kuna's Modbus Master Simulator (KMMS)
 
 A cross-platform Modbus **master** with a modern graphical interface, for macOS, Windows and Linux.
 Poll any number of register ranges from serial devices or TCP slaves, watch the values update live,
 write values back, and save the whole workspace as a project file.
+
+![KMMS polling two register sets over Modbus TCP](docs/images/demo-polling.gif)
+
+Writing a register (FC16) from the table's context menu:
+
+![Writing a value to a holding register](docs/images/demo-write.gif)
+
+| Serial RTU | Modbus TCP |
+|------------|------------|
+| ![Two polling sets on a serial RTU connection](docs/images/screenshot-serial-rtu.png) | ![Changed values highlighted on a Modbus TCP connection](docs/images/screenshot-modbus-tcp.png) |
 
 ## Features
 
@@ -24,7 +34,8 @@ write values back, and save the whole workspace as a project file.
 **Live view**
 - Every register that is read **flashes green** on update, is marked **amber** when its value
   *changed*, and the whole set **blinks red** on a read error (with a faint red tint until the next
-  success). Durations are configurable in *Preferences*.
+  success). Each highlight can be switched off and its duration set in *Preferences* - handy
+  for fast poll intervals.
 - Per-set counters (OK / errors / last response time or last error) and totals in the status bar.
 - Value columns: UInt16, Int16, Hex, Binary, ASCII, UInt32, Int32, Float32, Hex32, UInt64, Int64,
   Float64 - with byte-swap and word-swap options for all four 32-bit byte orders.
@@ -100,4 +111,17 @@ The Modbus stack is a small purpose-built implementation instead of a library cl
 application needs exact per-set timeouts, no hidden retries, raw frame tracing and an
 immediately interruptible Close. [pymodbus] is used by the tests only.
 
+## License
+
+KMMS is free for **non-commercial** use under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md): personal use, hobby projects, study,
+research, and use by charities, schools, public research and government institutions. Use for
+a commercial purpose (for example as a tool in paid work or inside a company) is not covered;
+contact the author for a commercial license.
+
+The binaries include third-party software under its own licenses: [Qt for Python (PySide6)]
+and Qt under the LGPL v3, and [pySerial] under the BSD 3-Clause license.
+
 [pymodbus]: https://github.com/pymodbus-dev/pymodbus
+[Qt for Python (PySide6)]: https://doc.qt.io/qtforpython-6/licenses.html
+[pySerial]: https://github.com/pyserial/pyserial

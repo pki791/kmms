@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
+from PySide6.QtGui import QPainter
 from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QProxyStyle
+from PySide6.QtWidgets import QStyle
+from PySide6.QtWidgets import QStyleOptionComplex
+from PySide6.QtWidgets import QStyleOptionTitleBar
+from PySide6.QtWidgets import QWidget
 
 
 @dataclass(frozen=True)
@@ -46,6 +54,45 @@ DARK = Theme(
 _current: Theme = LIGHT
 
 
+class AppStyle(QProxyStyle):
+    """Fusion with a crisp window title on MDI sub-windows.
+
+    Fusion paints an active title twice - a dark copy shifted by one pixel under the white
+    text - which looks blurred. Here the title is drawn once, bold while active.
+    """
+
+    def __init__(self) -> None:
+        """Wrap the Fusion style."""
+        super().__init__("Fusion")
+
+    def drawComplexControl(self, control: QStyle.ComplexControl,  # noqa: N802 - Qt naming
+                           option: QStyleOptionComplex, painter: QPainter,
+                           widget: Optional[QWidget] = None) -> None:
+        """Draw title bars without their text, then add the text once."""
+        if (control != QStyle.ComplexControl.CC_TitleBar
+                or not isinstance(option, QStyleOptionTitleBar) or not option.text):
+            super().drawComplexControl(control, option, painter, widget)
+            return
+        bare = QStyleOptionTitleBar(option)
+        bare.text = ""
+        super().drawComplexControl(control, bare, painter, widget)
+        active = bool(option.state & QStyle.StateFlag.State_Active)
+        rect = self.subControlRect(control, option, QStyle.SubControl.SC_TitleBarLabel, widget)
+        painter.save()
+        font = painter.font()
+        font.setBold(active)
+        painter.setFont(font)
+        role = QPalette.ColorRole.HighlightedText if active else QPalette.ColorRole.Text
+        painter.setPen(option.palette.color(role))
+        text = painter.fontMetrics().elidedText(option.text, Qt.TextElideMode.ElideRight,
+                                                rect.width() - 14)
+        painter.drawText(rect, int(Qt.AlignmentFlag.AlignCenter), text)
+        painter.restore()
+
+
+_style: Optional[AppStyle] = None
+
+
 def current() -> Theme:
     """Return the theme that is currently applied."""
     return _current
@@ -79,9 +126,11 @@ def blend(base: QColor, top: QColor, amount: float) -> QColor:
 
 def apply(app: QApplication, theme: Theme) -> None:
     """Install ``theme`` as palette and stylesheet of the application."""
-    global _current
+    global _current, _style
     _current = theme
-    app.setStyle("Fusion")
+    if _style is None:
+        _style = AppStyle()  # module reference: the application does not keep it alive
+        app.setStyle(_style)
     palette = QPalette()
     roles = {
         QPalette.ColorRole.Window: theme.window,

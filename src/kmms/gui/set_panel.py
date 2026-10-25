@@ -83,6 +83,7 @@ class SetPanel(QWidget):
         self._last_ok: Optional[bool] = None
         self._flash_pref = DEFAULT_FLASH_S
         self._change_pref = DEFAULT_CHANGE_S
+        self._error_blink = True
 
         self.model = RegisterTableModel(poll_set, self)
         self.table = RegisterTable()
@@ -205,16 +206,17 @@ class SetPanel(QWidget):
         self._refresh_status()
         self._refresh_counters()
 
-    def set_highlight_times(self, flash_s: float, change_s: float) -> None:
-        """Set the user preferred durations of the green flash and the amber change mark."""
+    def set_highlights(self, flash_s: float, change_s: float, error_blink: bool) -> None:
+        """Set the durations of the green flash and the amber change mark (0 = off)."""
         self._flash_pref = flash_s
         self._change_pref = change_s
+        self._error_blink = error_blink
         self._apply_timing()
 
     def _apply_timing(self) -> None:
         """Flash no longer than 60 % of the poll interval so fast polls still visibly pulse."""
         flash = min(self._flash_pref, max(0.08, self.poll_set.interval_ms / 1000.0 * 0.6))
-        self.model.set_timing(flash, self._change_pref)
+        self.model.set_timing(flash, self._change_pref, self._error_blink)
 
     def set_connection_state(self, connected: bool) -> None:
         """Enable cell editing only on an open connection."""

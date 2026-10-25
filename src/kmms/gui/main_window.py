@@ -36,6 +36,8 @@ from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
 
 from kmms import APP_NAME
+from kmms import LICENSE_NAME
+from kmms import LICENSE_URL
 from kmms import PROJECT_EXTENSION
 from kmms import __version__
 from kmms import engine as eng
@@ -536,8 +538,7 @@ class MainWindow(QMainWindow):
     def _create_window(self, poll_set: PollSet) -> None:
         """Create the MDI window for ``poll_set`` according to its saved state."""
         panel = SetPanel(poll_set)
-        panel.set_highlight_times(self.settings.flash_ms / 1000.0,
-                                  self.settings.change_ms / 1000.0)
+        self._apply_highlights(panel)
         panel.edit_requested.connect(self.edit_set)
         panel.toggle_requested.connect(self.toggle_set)
         panel.duplicate_requested.connect(self.duplicate_set)
@@ -1085,9 +1086,15 @@ class MainWindow(QMainWindow):
         dialog.apply_to(self.settings)
         self.set_theme(self.settings.theme)
         for panel in self.panels.values():
-            panel.set_highlight_times(self.settings.flash_ms / 1000.0,
-                                      self.settings.change_ms / 1000.0)
+            self._apply_highlights(panel)
         self._autosave_timer.start(self.settings.autosave_seconds * 1000)
+
+    def _apply_highlights(self, panel: SetPanel) -> None:
+        """Pass the highlight preferences to ``panel``."""
+        s = self.settings
+        panel.set_highlights(s.flash_ms / 1000.0 if s.highlight_read else 0.0,
+                             s.change_ms / 1000.0 if s.highlight_change else 0.0,
+                             s.highlight_error)
 
     def show_about(self) -> None:
         """Show the about box."""
@@ -1096,6 +1103,8 @@ class MainWindow(QMainWindow):
             f"<h3>{APP_NAME}</h3><p>Version {__version__}</p>"
             "<p>A Modbus master for serial RTU / ASCII and Modbus TCP, with live "
             "register monitoring.</p>"
+            f"<p>Free for non-commercial use under the "
+            f"<a href='{LICENSE_URL}'>{LICENSE_NAME}</a>.</p>"
             f"<p style='color:gray'>Python {platform.python_version()} · "
             f"PySide6 {PySide6.__version__} · {sys.platform}</p>")
 

@@ -51,6 +51,7 @@ class RegisterTableModel(QAbstractTableModel):
         self._mono = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
         self._flash_s = DEFAULT_FLASH_S
         self._change_s = DEFAULT_CHANGE_S
+        self._error_blink = True
         self._write_enabled = False
         self._columns: list[str] = []
         self._values: list[Optional[int]] = []
@@ -87,10 +88,14 @@ class RegisterTableModel(QAbstractTableModel):
         """Adopt a definition with the same shape (name/timing changed) and keep the values."""
         self._set = poll_set
 
-    def set_timing(self, flash_s: float, change_s: float) -> None:
-        """Change the highlight durations."""
+    def set_timing(self, flash_s: float, change_s: float, error_blink: bool = True) -> None:
+        """Change the highlight durations; 0 disables a highlight.
+
+        Without ``error_blink`` a failed read only applies the faint red tint.
+        """
         self._flash_s = flash_s
         self._change_s = change_s
+        self._error_blink = error_blink
 
     def set_write_enabled(self, enabled: bool) -> None:
         """Allow or forbid editing cells (writes need an open connection)."""
@@ -123,17 +128,18 @@ class RegisterTableModel(QAbstractTableModel):
         self._anim_until = max(self._anim_until, now + max(self._flash_s, self._change_s))
         self._now = now
         self._emit_all()
-        return True
+        return self._anim_until > now
 
     def apply_error(self, now: Optional[float] = None) -> bool:
         """Mark the set as failing (red blink, then a permanent faint red tint)."""
         now = time.monotonic() if now is None else now
         self._error_at = now
         self._stale = True
-        self._anim_until = max(self._anim_until, now + ERROR_BLINK_S)
+        if self._error_blink:
+            self._anim_until = max(self._anim_until, now + ERROR_BLINK_S)
         self._now = now
         self._emit_all()
-        return True
+        return self._anim_until > now
 
     def mark_idle(self) -> None:
         """Clear the error tint (connection closed or set paused)."""
@@ -293,7 +299,9 @@ class RegisterTableModel(QAbstractTableModel):
         base = QColor(colors.base)
         result = base
         if self._stale:
-            blink = max(0.0, 1.0 - (now - self._error_at) / ERROR_BLINK_S)
+            blink = 0.0
+            if self._error_blink:
+                blink = max(0.0, 1.0 - (now - self._error_at) / ERROR_BLINK_S)
             amount = STALE_TINT + (ERROR_ALPHA - STALE_TINT) * blink
             return theme.blend(base, QColor(colors.error_color), amount)
         updated = max(self._updated_at[row:last], default=_NEVER)
